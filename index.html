@@ -63,32 +63,34 @@
   white-space: pre-line;
 }
     
-/* Example circles for the magnitude legend */
+
 .magnitude-legend {
   display: flex;
-  justify-content: space-around;
-  align-items: end;
+  align-items: center;
+  gap: 15px;
   margin: 12px 0;
 }
 
-.magnitude-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
+.mag-circles {
+  position: relative;
+  width: 30px;
+  height: 30px;
 }
 
-.magnitude-circle {
-  display: inline-block;
-  background: #888;
-  border: 1px solid white;
+.mag-circles span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid #555;
   border-radius: 50%;
+  box-sizing: border-box;
 }
 
 .mag3 {
   width: 6px;
   height: 6px;
+  background: #555;
 }
 
 .mag45 {
@@ -99,6 +101,11 @@
 .mag6 {
   width: 24px;
   height: 24px;
+}
+
+.mag-labels {
+  font-size: 12px;
+  line-height: 1.5;
 }
    
 #magRange {
@@ -134,21 +141,21 @@
   <hr>
   <b>Legend</b>
 
+
 <p style="font-size:14px;">Magnitude (circle size):</p>
 <div class="magnitude-legend">
-  <div class="magnitude-item">
-    <span class="magnitude-circle mag3"></span>
-    <span>M3.0</span>
+  <div class="mag-circles">
+    <span class="mag6"></span>
+    <span class="mag45"></span>
+    <span class="mag3"></span>
   </div>
-  <div class="magnitude-item">
-    <span class="magnitude-circle mag45"></span>
-    <span>M4.5</span>
-  </div>
-  <div class="magnitude-item">
-    <span class="magnitude-circle mag6"></span>
-    <span>M6.0</span>
+  <div class="mag-labels">
+    M6.0 — outer<br>
+    M4.5 — middle<br>
+    M3.0 — inner
   </div>
 </div>
+<p style="font-size:14px;">Depth (circle colour):</p>
 <p style="font-size:14px;">Depth (circle colour):</p>
   <p class="legend-item">
     <span class="swatch" style="background:#277da1;"></span>
