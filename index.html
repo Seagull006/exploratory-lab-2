@@ -10,13 +10,28 @@
   <link href="https://cdn.jsdelivr.net/npm/nouislider@15.8.1/dist/nouislider.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/nouislider@15.8.1/dist/nouislider.min.js"></script>
 
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
+
   <style>
     body { margin: 0; }
 
     #map {
       width: 100%;
       height: 100vh;
-    }
+    }    
+#radiusKm {
+  width: 100%;
+  padding: 5px;
+  margin-top: 5px;
+}
+#chooseArea, #clearArea {
+  padding: 6px;
+  cursor: pointer;
+}
+#areaCount {
+  font-size: 13px;
+  line-height: 1.4;
+}
     #controls {
   position: absolute;
   bottom: 20px;
@@ -63,7 +78,6 @@
   white-space: pre-line;
 }
     
-/* Example circles for the magnitude legend */
 .magnitude-legend {
   display: flex;
   justify-content: space-around;
@@ -131,9 +145,22 @@
 
   <p id="quakeCount">Loading earthquake count...</p>
 
+<hr>
+<b>Search nearby earthquakes</b>
+<p>Select a radius:</p>
+<select id="radiusKm">
+  <option value="50">50 km</option>
+  <option value="100" selected>100 km</option>
+  <option value="200">200 km</option>
+</select>
+<p>
+  <button id="chooseArea">Select search area</button>
+  <button id="clearArea">Clear area</button>
+</p>
+<p id="areaCount">No search area selected.</p>
+  
   <hr>
   <b>Legend</b>
-
 <p style="font-size:14px;">Magnitude (circle size):</p>
 <div class="magnitude-legend">
   <div class="magnitude-item">
@@ -208,6 +235,36 @@
           'circle-stroke-width': 0.7
         }
       });
+    
+  map.addSource('search-circle', {
+    type: 'geojson',
+    data: {
+      type: 'FeatureCollection',
+      features: []
+  }
+});
+
+    map.addLayer({
+      id: 'search-fill',
+      type: 'fill',
+      source: 'search-circle',
+      paint: {
+        'fill-color': '#287AA8',
+        'fill-opacity': 0.12
+  }
+}, 'earthquake-points');
+
+    map.addLayer({
+      id: 'search-outline',
+      type: 'line',
+      source: 'search-circle',
+      paint: {
+        'line-color': '#287AA8',
+        'line-width': 2,
+        'line-dasharray': [2, 2]
+  }
+}, 'earthquake-points');
+
 
 const rangeSlider = document.getElementById('magRange');
 const magValue = document.getElementById('magValue');
@@ -243,6 +300,28 @@ fetch('earthquakes_bc.geojson')
     });
 
     const depthFilter = document.getElementById('depthFilter');
+
+// Search radius controls.
+    const chooseArea = document.getElementById('chooseArea');
+    const clearArea = document.getElementById('clearArea');
+    const radiusKm = document.getElementById('radiusKm');
+    const areaCount = document.getElementById('areaCount');
+
+    let choosingArea = false;
+    let searchCenter = null;
+  let searchArea = null;
+
+// Draw a circle around the selected location.
+function drawSearchArea() {
+
+  searchArea = turf.circle(
+    searchCenter,
+    Number(radiusKm.value),
+    { steps: 64, units: 'kilometers' }
+  );
+
+  map.getSource('search-circle').setData(searchArea);
+}
 
     function updateFilters() {
 
@@ -298,6 +377,18 @@ fetch('earthquakes_bc.geojson')
       quakeCount.textContent =
         matching.length + ' earthquakes match your filters';
     }
+// Count matching earthquakes inside turf circle.
+if (searchArea) {
+  const nearby = matching.filter(feature =>
+    turf.booleanPointInPolygon(feature, searchArea)
+  );
+  areaCount.textContent =
+    nearby.length + ' matching earthquakes within ' +
+    radiusKm.value + ' km';
+} else {
+  areaCount.textContent = 'No search area selected.';
+}
+
 
     // Update when filter changes.
     rangeSlider.noUiSlider.on('update', updateFilters);
@@ -307,7 +398,7 @@ fetch('earthquakes_bc.geojson')
 
     // Popup showing information about an individual earthquake.
     map.on('click', 'earthquake-points', event => {
-
+      if (choosingArea) return;
       const feature = event.features[0];
       const properties = feature.properties;
 
@@ -342,5 +433,49 @@ fetch('earthquakes_bc.geojson')
     console.error('Earthquake data error:', error);
     quakeCount.textContent = 'Unable to load earthquake data.';
   });
+      
+// Activate the search area selection.
+chooseArea.addEventListener('click', () => {
+  choosingArea = true;
+  chooseArea.textContent = 'Click on the map...';
+  map.getCanvas().style.cursor = 'crosshair';
+});
+
+// Select the centre of the circle by clicking the map.
+map.on('click', event => {
+
+  if (!choosingArea) return;
+
+  searchCenter = [event.lngLat.lng, event.lngLat.lat];
+  choosingArea = false;
+
+  drawSearchArea();
+  updateFilters();
+
+  chooseArea.textContent = 'Move search area';
+  map.getCanvas().style.cursor = '';
+});
+
+// Redraw the circle if the radius changes.
+radiusKm.addEventListener('change', () => {
+  if (searchCenter) {
+    drawSearchArea();
+    updateFilters();
+  }
+});
+// Clear the selected area.
+clearArea.addEventListener('click', () => {
+  choosingArea = false;
+  searchCenter = null;
+  searchArea = null;
+  map.getSource('search-circle').setData({
+    type: 'FeatureCollection',
+    features: []
+  });
+  chooseArea.textContent = 'Select search area';
+  map.getCanvas().style.cursor = '';
+  updateFilters();
+});
+
 });
   </script>
