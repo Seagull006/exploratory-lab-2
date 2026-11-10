@@ -483,5 +483,10 @@ clearArea.addEventListener('click', () => {
   map.getCanvas().style.cursor = '';
   updateFilters();
 });
-});
+  })
+  .catch(error => {
+    console.error('Earthquake data error:', error);
+    quakeCount.textContent = 'Unable to load earthquake data.';
+  });
+}); 
   </script>
