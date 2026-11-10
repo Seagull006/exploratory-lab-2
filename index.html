@@ -8,6 +8,9 @@
   <link href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 
+  <link href="https://cdn.jsdelivr.net/npm/nouislider@15.8.1/dist/nouislider.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/nouislider@15.8.1/dist/nouislider.min.js"></script>
+
   <style>
     body { margin: 0; }
 
@@ -27,6 +30,10 @@
   font-size: 14px;
   width: 230px;
 }
+    
+#magRange {
+  margin: 25px 10px;
+}
 
 #magSlider, #maxMagSlider {
   width: 100%;
@@ -36,15 +43,13 @@
 
 <body>
   <div id="map"></div>
-  <div id="controls">
+  
+<div id="controls">
   <b>Earthquake Magnitude Filter</b>
-  <p>Minimum magnitude: <span id="magValue">2.5</span></p>
-  <input type="range" id="magSlider"
-         min="2.5" max="6.5" step="0.5" value="2.5">
-  <p>Maximum magnitude: <span id="maxMagValue">9.0</span></p>
-  <input type="range" id="maxMagSlider"
-         min="2.5" max="6.5" step="0.5" value="6.5">
 
+  <p>Magnitude range: <span id="magValue">2.5 – 6.5</span></p>
+
+  <div id="magRange"></div>
 
   <p id="quakeCount">Loading earthquake count...</p>
 </div>
@@ -84,13 +89,20 @@
         }
       });
 
-const slider = document.getElementById('magSlider');
-const maxSlider = document.getElementById('maxMagSlider');
+const rangeSlider = document.getElementById('magRange');
 const magValue = document.getElementById('magValue');
-const maxMagValue = document.getElementById('maxMagValue');
 const quakeCount = document.getElementById('quakeCount');
 
-// Read the earthquake data.
+noUiSlider.create(rangeSlider, {
+  start: [2.5, 6.5],
+  connect: true,
+  step: 0.5,
+  range: {
+    min: 2.5,
+    max: 6.5
+  }
+});
+
 fetch('earthquakes_bc.geojson')
   .then(response => response.json())
   .then(data => {
@@ -100,23 +112,60 @@ fetch('earthquakes_bc.geojson')
       feature.properties.type === 'earthquake'
     );
 
-    function updateMagnitude(changed) {
+    <div id="magRange"></div>
 
-      // Keep min from passing max slider.
-      if (Number(slider.value) > Number(maxSlider.value)) {
-        if (changed === 'min') {
-          maxSlider.value = slider.value;
-        } else {
-          slider.value = maxSlider.value;
-        }
-      }
-      const minimum = Number(slider.value);
-      const maximum = Number(maxSlider.value);
+  <p id="quakeCount">Loading earthquake count...</p>
+</div>
 
-      magValue.textContent = minimum.toFixed(1);
-      maxMagValue.textContent = maximum.toFixed(1);
 
-      // Filter the points displayed on the map.
+
+Add this rule to your CSS:
+
+#magRange {
+  margin: 25px 10px;
+}
+
+
+
+You can delete the old #magSlider CSS rule.
+3. Replace your existing magnitude-filtering JavaScript
+Keep the existing map, source and earthquake circle layer exactly as they are.
+
+Replace the old JavaScript beginning with const slider = document.getElementById('magSlider'); through the end of its fetch() block with:
+
+// Two-handle slider using noUiSlider:
+// https://refreshless.com/nouislider/
+
+const rangeSlider = document.getElementById('magRange');
+const magValue = document.getElementById('magValue');
+const quakeCount = document.getElementById('quakeCount');
+
+noUiSlider.create(rangeSlider, {
+  start: [2.5, 9],
+  connect: true,
+  step: 0.5,
+  range: {
+    min: 2.5,
+    max: 9
+  }
+});
+
+fetch('earthquakes_bc.geojson')
+  .then(response => response.json())
+  .then(data => {
+
+    const earthquakes = data.features.filter(feature =>
+      feature.properties.type === 'earthquake'
+    );
+
+    rangeSlider.noUiSlider.on('update', values => {
+
+      const minimum = Number(values[0]);
+      const maximum = Number(values[1]);
+
+      magValue.textContent =
+        minimum.toFixed(1) + ' – ' + maximum.toFixed(1);
+
       map.setFilter('earthquake-points', [
         'all',
         ['==', ['get', 'type'], 'earthquake'],
@@ -124,17 +173,14 @@ fetch('earthquakes_bc.geojson')
         ['<=', ['get', 'mag'], maximum]
       ]);
       
-      // Count earthquakes that meet the same filter.
       const matching = earthquakes.filter(feature =>
         feature.properties.mag >= minimum &&
         feature.properties.mag <= maximum
       );
-      
       quakeCount.textContent =
-        matching.length + ' earthquakes in dataset';
-      
-    }
-
+        matching.length + ' earthquakes in selected range';
+    });
+  });
     // Update the map whenever the slider moves.
     slider.addEventListener('input', updateMagnitude);
     maxSlider.addEventListener('input', () => updateMagnitude('max'));
