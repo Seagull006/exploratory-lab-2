@@ -45,8 +45,6 @@
   width: 230px;
 }
     #controls {
-  max-height: 75vh;
-  overflow-y: auto;
   z-index: 2;
 }
     #controls h3 {
@@ -118,12 +116,44 @@
 #magRange {
   margin: 25px 10px;
 }
+  
+#areaControls {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 2;
+  width: 230px;
+  box-sizing: border-box;
+  padding: 15px;
+  background: white;
+  border-radius: 5px;
+  box-shadow: 0 1px 5px #999;
+  font: 14px Arial, sans-serif;
+}
+
 
   </style>
 </head>
 
 <body>
   <div id="map"></div>
+
+<div id="areaControls">
+  <b>Search nearby earthquakes</b>
+  <p class="note">
+    Select a radius, then choose a location on the map.
+  </p>
+  <select id="radiusKm">
+    <option value="50">50 km</option>
+    <option value="100" selected>100 km</option>
+    <option value="200">200 km</option>
+  </select>
+  <p>
+    <button id="chooseArea">Select search area</button>
+    <button id="clearArea">Clear area</button>
+  </p>
+  <p id="areaCount">No search area selected.</p>
+</div>
   
 <div id="controls">
   <b>BC Earthquakes filter</b>
@@ -145,20 +175,6 @@
 
   <p id="quakeCount">Loading earthquake count...</p>
 
-<hr>
-<b>Search nearby earthquakes</b>
-<p>Select a radius:</p>
-<select id="radiusKm">
-  <option value="50">50 km</option>
-  <option value="100" selected>100 km</option>
-  <option value="200">200 km</option>
-</select>
-<p>
-  <button id="chooseArea">Select search area</button>
-  <button id="clearArea">Clear area</button>
-</p>
-<p id="areaCount">No search area selected.</p>
-  
   <hr>
   <b>Legend</b>
 <p style="font-size:14px;">Magnitude (circle size):</p>
@@ -376,7 +392,6 @@ function drawSearchArea() {
 
       quakeCount.textContent =
         matching.length + ' earthquakes match your filters';
-    }
 // Count matching earthquakes inside turf circle.
 if (searchArea) {
   const nearby = matching.filter(feature =>
@@ -387,7 +402,7 @@ if (searchArea) {
     radiusKm.value + ' km';
 } else {
   areaCount.textContent = 'No search area selected.';
-}
+} }
 
 
     // Update when filter changes.
@@ -455,7 +470,6 @@ map.on('click', event => {
   chooseArea.textContent = 'Move search area';
   map.getCanvas().style.cursor = '';
 });
-
 // Redraw the circle if the radius changes.
 radiusKm.addEventListener('change', () => {
   if (searchCenter) {
@@ -476,6 +490,5 @@ clearArea.addEventListener('click', () => {
   map.getCanvas().style.cursor = '';
   updateFilters();
 });
-
 });
   </script>
