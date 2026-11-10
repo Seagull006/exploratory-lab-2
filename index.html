@@ -29,7 +29,32 @@
   font-size: 14px;
   width: 230px;
 }
-    
+    #controls {
+  max-height: 75vh;
+  overflow-y: auto;
+  z-index: 2;
+}
+    #controls h3 {
+  margin-top: 0;
+}
+    #depthFilter {
+  width: 100%;
+  padding: 6px;
+  margin-top: 8px;
+}
+    .note {
+  color: #555;
+  font-size: 12px;
+  line-height: 1.4;
+}
+    .swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+   
 #magRange {
   margin: 25px 10px;
 }
@@ -41,15 +66,43 @@
   <div id="map"></div>
   
 <div id="controls">
-  <b>Earthquake Magnitude Filter</b>
-
-  <p>Magnitude range: <span id="magValue">2.5 – 6.5</span></p>
-
+  <b>BC Earthquakes filter</b>
+  <p class="note">
+    Recorded earthquakes in BC and surrounding areas,
+    2025–2026. Use the filters to explore seismic activity.
+  </p>
+  
+  <p>Magnitude: <span id="magValue">2.5 – 6.5</span></p>
   <div id="magRange"></div>
+  
+  <label for="depthFilter">Earthquake depth:</label>
+  <select id="depthFilter">
+    <option value="all">All depths</option>
+    <option value="under30">Less than 30 km</option>
+    <option value="30to70">30–70 km</option>
+    <option value="70plus">70 km or deeper</option>
+  </select>
 
   <p id="quakeCount">Loading earthquake count...</p>
 </div>
-
+<hr>
+  <b>Legend</b>
+  <p class="note">Circle size represents magnitude.</p>
+  <p class="note">
+    <span class="swatch" style="background:#277da1;"></span>
+    Under 30 km
+  </p>
+  <p class="note">
+    <span class="swatch" style="background:#e8a33d;"></span>
+    30–70 km
+  </p>
+  <p class="note">
+    <span class="swatch" style="background:#8956a3;"></span>
+    70 km or deeper
+  </p>
+  <p class="note">Earthquake data: USGS Earthquake Catalog</p>
+</div>
+  
   <script>
     // Basemap: OpenFreeMap
     const map = new maplibregl.Map({
@@ -62,17 +115,26 @@
     // Adapted from MapLibre's Draw GeoJSON Points example.
     map.on('load', () => {
 
-      map.addSource('earthquakes', {
-        type: 'geojson',
-        data: 'earthquakes_bc.geojson'
-      });
+      
+  map.addSource('earthquakes', {
+    type: 'geojson',
+    data: {
+      type: 'FeatureCollection',
+      features: []
+  }
+});
 
       map.addLayer({
         id: 'earthquake-points',
         type: 'circle',
         source: 'earthquakes',
         paint: {
-          'circle-color': '#d66b36',
+          'circle-color': [
+            'step', ['get', 'depth'],
+            '#277da1',
+            30, '#e8a33d',
+            70, '#8956a3' 
+          ],
           'circle-radius': [
             'interpolate', ['linear'], ['get', 'mag'],
             3, 3,
@@ -99,41 +161,125 @@ noUiSlider.create(rangeSlider, {
   }
 });
 
-
 fetch('earthquakes_bc.geojson')
   .then(response => response.json())
   .then(data => {
 
-    // Only include actual earthquake events.
+    // Keep only earthquake events.
     const earthquakes = data.features.filter(feature =>
       feature.properties.type === 'earthquake'
     );
 
-    // Update the map whenever either slider handle moves.
-    rangeSlider.noUiSlider.on('update', values => {
+    // Get earthquake depth
+    earthquakes.forEach(feature => {
+      feature.properties.depth = feature.geometry.coordinates[2];
+    });
 
+    map.getSource('earthquakes').setData({
+      type: 'FeatureCollection',
+      features: earthquakes
+    });
+
+    const depthFilter = document.getElementById('depthFilter');
+
+    function updateFilters() {
+
+      const values = rangeSlider.noUiSlider.get();
       const minimum = Number(values[0]);
       const maximum = Number(values[1]);
+      const selectedDepth = depthFilter.value;
 
       magValue.textContent =
         minimum.toFixed(1) + ' – ' + maximum.toFixed(1);
 
-      // Display earthquakes within the selected magnitude range.
-      map.setFilter('earthquake-points', [
+      // Start with the magnitude range.
+      const filters = [
         'all',
-        ['==', ['get', 'type'], 'earthquake'],
         ['>=', ['get', 'mag'], minimum],
         ['<=', ['get', 'mag'], maximum]
-      ]);
+      ];
 
-      // Count earthquakes within the selected magnitude range.
-      const matching = earthquakes.filter(feature =>
-        feature.properties.mag >= minimum &&
-        feature.properties.mag <= maximum
-      );
+      // Add the selected depth category.
+      if (selectedDepth === 'under30') {
+        filters.push(['<', ['get', 'depth'], 30]);
+      }
+
+      if (selectedDepth === '30to70') {
+        filters.push(['>=', ['get', 'depth'], 30]);
+        filters.push(['<', ['get', 'depth'], 70]);
+      }
+
+      if (selectedDepth === '70plus') {
+        filters.push(['>=', ['get', 'depth'], 70]);
+      }
+
+      map.setFilter('earthquake-points', filters);
+
+      // Count earthquakes matching both filters.
+      const matching = earthquakes.filter(feature => {
+
+        const mag = feature.properties.mag;
+        const depth = feature.properties.depth;
+
+        const magnitudeMatches =
+          mag >= minimum && mag <= maximum;
+
+        const depthMatches =
+          selectedDepth === 'all' ||
+          (selectedDepth === 'under30' && depth < 30) ||
+          (selectedDepth === '30to70' && depth >= 30 && depth < 70) ||
+          (selectedDepth === '70plus' && depth >= 70);
+
+        return magnitudeMatches && depthMatches;
+      });
+
       quakeCount.textContent =
-        matching.length + ' earthquakes in selected range';
+        matching.length + ' earthquakes match your filters';
+    }
+
+    // Update when filter changes.
+    rangeSlider.noUiSlider.on('update', updateFilters);
+    depthFilter.addEventListener('change', updateFilters);
+
+    updateFilters();
+
+    // Popup showing information about an individual earthquake.
+    map.on('click', 'earthquake-points', event => {
+
+      const feature = event.features[0];
+      const properties = feature.properties;
+
+      const date = new Date(properties.time).toLocaleDateString(
+        'en-CA',
+        { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }
+      );
+
+      const information =
+        'Magnitude: ' + Number(properties.mag).toFixed(1) +
+        '\nLocation: ' + properties.place +
+        '\nDepth: ' + Number(properties.depth).toFixed(1) + ' km' +
+        '\nDate: ' + date;
+
+      new maplibregl.Popup()
+        .setLngLat(feature.geometry.coordinates.slice(0, 2))
+        .setText(information)
+        .addTo(map);
     });
+
+    // Make them obviously clickable
+    map.on('mouseenter', 'earthquake-points', () => {
+      map.getCanvas().style.cursor = 'pointer';
+    });
+
+    map.on('mouseleave', 'earthquake-points', () => {
+      map.getCanvas().style.cursor = '';
+    });
+
+  })
+  .catch(error => {
+    console.error('Earthquake data error:', error);
+    quakeCount.textContent = 'Unable to load earthquake data.';
+   });
   });
 });
   </script>
