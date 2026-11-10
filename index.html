@@ -78,9 +78,9 @@
   <label for="depthFilter">Earthquake depth:</label>
   <select id="depthFilter">
     <option value="all">All depths</option>
-    <option value="under30">Less than 30 km</option>
-    <option value="30to70">30–70 km</option>
-    <option value="70plus">70 km or deeper</option>
+    <option value="under30">Less than 5 km</option>
+    <option value="30to70">5–15 km</option>
+    <option value="70plus">15 km or deeper</option>
   </select>
 
   <p id="quakeCount">Loading earthquake count...</p>
@@ -90,15 +90,15 @@
   <p class="note">Circle size represents magnitude.</p>
   <p class="note">
     <span class="swatch" style="background:#277da1;"></span>
-    Under 30 km
+    Under 5 km
   </p>
   <p class="note">
     <span class="swatch" style="background:#e8a33d;"></span>
-    30–70 km
+    5–15 km
   </p>
   <p class="note">
     <span class="swatch" style="background:#8956a3;"></span>
-    70 km or deeper
+    15 km or deeper
   </p>
   <p class="note">Earthquake data: USGS Earthquake Catalog</p>
 </div>
@@ -132,8 +132,8 @@
           'circle-color': [
             'step', ['get', 'depth'],
             '#277da1',
-            30, '#e8a33d',
-            70, '#8956a3' 
+            5, '#e8a33d',
+            15, '#8956a3' 
           ],
           'circle-radius': [
             'interpolate', ['linear'], ['get', 'mag'],
@@ -200,17 +200,17 @@ fetch('earthquakes_bc.geojson')
       ];
 
       // Add the selected depth category.
-      if (selectedDepth === 'under30') {
-        filters.push(['<', ['get', 'depth'], 30]);
+      if (selectedDepth === 'under5') {
+        filters.push(['<', ['get', 'depth'], 5]);
       }
 
-      if (selectedDepth === '30to70') {
-        filters.push(['>=', ['get', 'depth'], 30]);
-        filters.push(['<', ['get', 'depth'], 70]);
+      if (selectedDepth === '5to15') {
+        filters.push(['>=', ['get', 'depth'], 5]);
+        filters.push(['<', ['get', 'depth'], 15]);
       }
 
-      if (selectedDepth === '70plus') {
-        filters.push(['>=', ['get', 'depth'], 70]);
+      if (selectedDepth === '15plus') {
+        filters.push(['>=', ['get', 'depth'], 15]);
       }
 
       map.setFilter('earthquake-points', filters);
@@ -226,9 +226,9 @@ fetch('earthquakes_bc.geojson')
 
         const depthMatches =
           selectedDepth === 'all' ||
-          (selectedDepth === 'under30' && depth < 30) ||
-          (selectedDepth === '30to70' && depth >= 30 && depth < 70) ||
-          (selectedDepth === '70plus' && depth >= 70);
+          (selectedDepth === 'under5' && depth < 5) ||
+          (selectedDepth === '5to15' && depth >= 5 && depth < 15) ||
+          (selectedDepth === '15plus' && depth >= 15);
 
         return magnitudeMatches && depthMatches;
       });
