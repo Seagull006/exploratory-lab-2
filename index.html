@@ -102,10 +102,17 @@ noUiSlider.create(rangeSlider, {
   }
 });
 
+
 fetch('earthquakes_bc.geojson')
   .then(response => response.json())
   .then(data => {
 
+    // Only include actual earthquake events.
+    const earthquakes = data.features.filter(feature =>
+      feature.properties.type === 'earthquake'
+    );
+
+    // Update the map whenever either slider handle moves.
     rangeSlider.noUiSlider.on('update', values => {
 
       const minimum = Number(values[0]);
@@ -114,13 +121,15 @@ fetch('earthquakes_bc.geojson')
       magValue.textContent =
         minimum.toFixed(1) + ' – ' + maximum.toFixed(1);
 
+      // Display earthquakes within the selected magnitude range.
       map.setFilter('earthquake-points', [
         'all',
         ['==', ['get', 'type'], 'earthquake'],
         ['>=', ['get', 'mag'], minimum],
         ['<=', ['get', 'mag'], maximum]
       ]);
-      
+
+      // Count earthquakes within the selected magnitude range.
       const matching = earthquakes.filter(feature =>
         feature.properties.mag >= minimum &&
         feature.properties.mag <= maximum
@@ -129,14 +138,5 @@ fetch('earthquakes_bc.geojson')
         matching.length + ' earthquakes in selected range';
     });
   });
-    // Update the map whenever the slider moves.
-    slider.addEventListener('input', updateMagnitude);
-    maxSlider.addEventListener('input', () => updateMagnitude('max'));
-    updateMagnitude();
-
-  });
-
-    });
+});
   </script>
-</body>
-</html>
