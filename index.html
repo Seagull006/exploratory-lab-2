@@ -107,57 +107,6 @@ fetch('earthquakes_bc.geojson')
   .then(response => response.json())
   .then(data => {
 
-     // Exclude non-earthquake events.
-    const earthquakes = data.features.filter(feature =>
-      feature.properties.type === 'earthquake'
-    );
-
-    <div id="magRange"></div>
-
-  <p id="quakeCount">Loading earthquake count...</p>
-</div>
-
-
-
-Add this rule to your CSS:
-
-#magRange {
-  margin: 25px 10px;
-}
-
-
-
-You can delete the old #magSlider CSS rule.
-3. Replace your existing magnitude-filtering JavaScript
-Keep the existing map, source and earthquake circle layer exactly as they are.
-
-Replace the old JavaScript beginning with const slider = document.getElementById('magSlider'); through the end of its fetch() block with:
-
-// Two-handle slider using noUiSlider:
-// https://refreshless.com/nouislider/
-
-const rangeSlider = document.getElementById('magRange');
-const magValue = document.getElementById('magValue');
-const quakeCount = document.getElementById('quakeCount');
-
-noUiSlider.create(rangeSlider, {
-  start: [2.5, 9],
-  connect: true,
-  step: 0.5,
-  range: {
-    min: 2.5,
-    max: 9
-  }
-});
-
-fetch('earthquakes_bc.geojson')
-  .then(response => response.json())
-  .then(data => {
-
-    const earthquakes = data.features.filter(feature =>
-      feature.properties.type === 'earthquake'
-    );
-
     rangeSlider.noUiSlider.on('update', values => {
 
       const minimum = Number(values[0]);
