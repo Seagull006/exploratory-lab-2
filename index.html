@@ -441,14 +441,7 @@ if (searchArea) {
 
     map.on('mouseleave', 'earthquake-points', () => {
       map.getCanvas().style.cursor = '';
-    });
-
-  })
-  .catch(error => {
-    console.error('Earthquake data error:', error);
-    quakeCount.textContent = 'Unable to load earthquake data.';
-  });
-      
+    });    
 // Activate the search area selection.
 chooseArea.addEventListener('click', () => {
   choosingArea = true;
