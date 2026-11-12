@@ -43,8 +43,6 @@
   font-family: Arial, sans-serif;
   font-size: 14px;
   width: 230px;
-}
-    #controls {
   z-index: 2;
 }
     #controls h3 {
@@ -303,7 +301,7 @@ fetch('earthquakes_bc.geojson')
       feature.properties.type === 'earthquake'
     );
 
-    // Get earthquake depth
+    // Get earthquake depth.
     earthquakes.forEach(feature => {
       feature.properties.depth = feature.geometry.coordinates[2];
     });
@@ -387,10 +385,10 @@ function drawSearchArea() {
 
         return magnitudeMatches && depthMatches;
       });
-
+// Count matching filtered earthquakes
       quakeCount.textContent =
         matching.length + ' earthquakes match your filters';
-// Count matching earthquakes inside turf circle.
+// Count matching (filtered) earthquakes inside turf circle.
 if (searchArea) {
   const nearby = matching.filter(feature =>
     turf.booleanPointInPolygon(feature, searchArea)
@@ -440,7 +438,7 @@ if (searchArea) {
     map.on('mouseleave', 'earthquake-points', () => {
       map.getCanvas().style.cursor = '';
     });    
-// Crosshair for turf buffer.
+// Crosshair for turf circle.
 chooseArea.addEventListener('click', () => {
   choosingArea = true;
   chooseArea.textContent = 'Click on the map...';
