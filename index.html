@@ -434,7 +434,7 @@ if (searchArea) {
         .addTo(map);
     });
 
-    // Make them obviously clickable
+    // Make them obviously clickable.
     map.on('mouseenter', 'earthquake-points', () => {
       map.getCanvas().style.cursor = 'pointer';
     });
@@ -442,7 +442,7 @@ if (searchArea) {
     map.on('mouseleave', 'earthquake-points', () => {
       map.getCanvas().style.cursor = '';
     });    
-// Activate the search area selection.
+// Crosshair for turf buffer.
 chooseArea.addEventListener('click', () => {
   choosingArea = true;
   chooseArea.textContent = 'Click on the map...';
