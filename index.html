@@ -209,7 +209,6 @@
 </div>
   
   <script>
-    // Basemap: OpenFreeMap
     const map = new maplibregl.Map({
       container: 'map',
       style: 'https://tiles.openfreemap.org/styles/liberty',
@@ -217,7 +216,6 @@
       zoom: 4
     });
 
-    // Adapted from MapLibre's Draw GeoJSON Points example.
     map.on('load', () => {
 
       
@@ -228,7 +226,7 @@
       features: []
   }
 });
-
+// Circle properties based on mag and depth.
       map.addLayer({
         id: 'earthquake-points',
         type: 'circle',
@@ -251,7 +249,6 @@
           'circle-stroke-width': 0.7
         }
       });
-    
   map.addSource('search-circle', {
     type: 'geojson',
     data: {
@@ -286,6 +283,7 @@ const rangeSlider = document.getElementById('magRange');
 const magValue = document.getElementById('magValue');
 const quakeCount = document.getElementById('quakeCount');
 
+// Use library for double-ended slider.
 noUiSlider.create(rangeSlider, {
   start: [2.5, 6.5],
   connect: true,
